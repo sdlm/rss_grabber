@@ -11,11 +11,9 @@ TAG_RE = re.compile(r'<[^>]+>')
 def remove_tags(text):
 	return TAG_RE.sub('', text)
 
-
 def get_lenta_rss():
 	lenta = feedparser.parse('https://lenta.ru/rss')
-	return [remove_tags(e['summary']) for e in lenta['entries'][:5]]
-
+	return [remove_tags(e['summary']) for e in lenta['entries']]
 
 def get_dict_by_lines(lines):
 	db = dict()
@@ -23,22 +21,22 @@ def get_dict_by_lines(lines):
 		l = line.encode('utf-8', 'ignore')
 		_hash = hashlib.md5(l).hexdigest()
 		db[_hash] = line
-		if k < 5:
-			print('{}: {}'.format(_hash, l[:90]))
 	return db
 
+def _write_to_file(mode, file_name, lines, without_breakers=False):
+	with codecs.open(file_name, mode, 'utf-8') as fo:
+		if without_breakers:
+			for e in lines:
+				fo.write(e)
+		else:
+			for e in lines:
+				fo.write(e + '\n')
 
-def write_to_file(file_name, lines):
-	with codecs.open(file_name, 'w', 'utf-8') as fo:
-		for e in lines:
-			print(e)
-			fo.write(e.encode('utf-8', 'ignore'))
+def write_to_file(file_name, lines, without_breakers=False):
+	_write_to_file('w', file_name, lines, without_breakers)
 
-def append_to_file(file_name, lines):
-	with codecs.open(file_name, 'a', 'utf-8') as fo:
-		for e in lines:
-			fo.write(e.encode('utf-8', 'ignore') + u'\n')
-
+def append_to_file(file_name, lines, without_breakers=False):
+	_write_to_file('a', file_name, lines, without_breakers)
 
 def update_base(temp_file, base_file):
 	if not os.path.isfile(temp_file):
@@ -50,7 +48,6 @@ def update_base(temp_file, base_file):
 
 		with codecs.open(temp_file, 'r', 'utf-8') as f:
 			t_data = f.readlines()
-			print(t_data)
 			with codecs.open(base_file, 'r', 'utf-8') as fo:
 				b_data = fo.readlines()
 
@@ -63,7 +60,7 @@ def update_base(temp_file, base_file):
 					if h in hashes_t:
 						data.append(t_dict[h])
 
-		append_to_file(base_file, data)
+		append_to_file(base_file, data, without_breakers=True)
 
 	else:
 		write_to_file(base_file, get_lenta_rss())
